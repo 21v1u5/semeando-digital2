@@ -1,0 +1,33 @@
+# Stack do Traefik (proxy reverso compartilhado).
+# Sobe uma vez; os sistemas se conectam a ele pela rede externa "traefik-publico".
+#
+# Pre-requisito (uma vez):  docker network create traefik-publico
+# Subir:                    docker compose up -d
+services:
+  traefik:
+    image: traefik:v3.1
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+    networks:
+      - traefik-publico
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      # Painel do Traefik em https://traefik.21v1u5.com (protegido por usuario/senha).
+      # Opcional: remova este bloco de labels se nao quiser expor o dashboard.
+      - "traefik.http.routers.traefik.rule=Host(`traefik.21v1u5.com`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
+
+networks:
+  traefik-publico:
+    external: true

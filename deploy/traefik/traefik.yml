@@ -1,0 +1,28 @@
+# Configuracao estatica do Traefik.
+entryPoints:
+  web:
+    address: ":80"
+    # Todo acesso HTTP e redirecionado para HTTPS.
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+providers:
+  # Le as labels dos containers (cada sistema se anuncia ao Traefik).
+  docker:
+    exposedByDefault: false
+  # Le os arquivos em /etc/traefik/dynamic (onde fica o certificado de origem).
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+# Painel/administracao (exposto via labels no docker-compose, com senha).
+api:
+  dashboard: true
+
+log:
+  level: INFO

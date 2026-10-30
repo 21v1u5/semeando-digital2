@@ -1,0 +1,61 @@
+# Semeando Digital em PRODUCAO, atras do Traefik.
+# - Nenhuma porta publicada no host: so o frontend e exposto, e apenas para o
+#   Traefik (rede externa "traefik-publico"). Backend e banco ficam na rede
+#   interna, inacessiveis de fora.
+# - O certificado TLS e servido pelo Traefik (Cloudflare Origin Certificate).
+#
+# Subir:  docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-semeando}
+      POSTGRES_USER: ${DB_USER:-semeando}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - interna
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-semeando} -d ${DB_NAME:-semeando}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-semeando}
+      DB_USER: ${DB_USER:-semeando}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+    networks:
+      - interna
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    networks:
+      - interna          # fala com o backend (proxy /api)
+      - traefik-publico  # exposto ao Traefik
+    depends_on:
+      - backend
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-publico"
+      - "traefik.http.routers.semeando.rule=Host(`semeando-digital.21v1u5.com`)"
+      - "traefik.http.routers.semeando.entrypoints=websecure"
+      - "traefik.http.routers.semeando.tls=true"
+      - "traefik.http.services.semeando.loadbalancer.server.port=80"
+
+networks:
+  interna:
+  traefik-publico:
+    external: true
+
+volumes:
+  pgdata:

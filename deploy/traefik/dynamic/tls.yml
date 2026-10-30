@@ -1,0 +1,15 @@
+# Certificado de origem do Cloudflare (Full strict).
+# Coloque os dois arquivos em deploy/traefik/certs/:
+#   origin.pem  -> o certificado (bloco "ORIGIN CERTIFICATE")
+#   origin.key  -> a chave privada
+# Gere-os em: Cloudflare > SSL/TLS > Origin Server > Create Certificate
+# (inclua os hosts  21v1u5.com  e  *.21v1u5.com  para cobrir os subdominios).
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/origin.pem
+        keyFile: /certs/origin.key
+  certificates:
+    - certFile: /certs/origin.pem
+      keyFile: /certs/origin.key
