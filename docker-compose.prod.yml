@@ -29,6 +29,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-semeando}
       DB_USER: ${DB_USER:-semeando}
       DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-https://semeando-digital.21v1u5.com}
     networks:
       - interna
     depends_on:
