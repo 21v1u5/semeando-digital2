@@ -287,6 +287,12 @@ rota('POST', '/auth/login', null, ({ body }) => {
 })
 rota('GET', '/auth/me', [], ({ u }) => ({ id: u.id, nome: u.nome, email: u.email, perfil: u.perfil }))
 rota('POST', '/auth/logout', [], ({ token }) => { tokens.delete(token) })
+rota('POST', '/auth/senha', [], ({ u, body }) => {
+  if (!body?.senhaAtual || u.senha !== body.senhaAtual) throw new Erro(400, 'Senha atual incorreta')
+  if (!body?.novaSenha || body.novaSenha.trim().length < 6) throw new Erro(400, 'A nova senha deve ter ao menos 6 caracteres')
+  u.senha = body.novaSenha.trim()
+  return { mensagem: 'Senha alterada' }
+})
 
 rota('GET', '/avisos', [], ({ u }) => {
   if (u.perfil === 'GESTOR') return ordenarAvisos().map(avisoJSON)

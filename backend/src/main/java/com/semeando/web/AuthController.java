@@ -34,6 +34,13 @@ public class AuthController {
         auth.logout(req);
     }
 
+    public record SenhaForm(String senhaAtual, String novaSenha) {}
+
+    @PostMapping("/senha")
+    public void trocarSenha(@RequestBody SenhaForm form, HttpServletRequest req) {
+        auth.trocarSenha(req, form.senhaAtual(), form.novaSenha());
+    }
+
     private Map<String, Object> usuarioSemSenha(Usuario u) {
         return Map.of("id", u.getId(), "nome", u.getNome(), "email", u.getEmail(), "perfil", u.getPerfil());
     }

@@ -48,6 +48,18 @@ public class AuthService {
         if (t != null) tokens.remove(t);
     }
 
+    /** Troca a senha do usuário autenticado (qualquer perfil). */
+    @org.springframework.transaction.annotation.Transactional
+    public void trocarSenha(HttpServletRequest req, String senhaAtual, String novaSenha) {
+        Usuario u = usuario(req);
+        if (senhaAtual == null || u.getSenha() == null || !encoder.matches(senhaAtual, u.getSenha()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual incorreta");
+        if (novaSenha == null || novaSenha.trim().length() < 6)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A nova senha deve ter ao menos 6 caracteres");
+        u.setSenha(encoder.encode(novaSenha.trim()));
+        usuarios.save(u);
+    }
+
     public Usuario usuario(HttpServletRequest req) {
         String t = token(req);
         Long id = t == null ? null : tokens.get(t);
