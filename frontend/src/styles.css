@@ -215,11 +215,6 @@ td.actions-cell > * { margin: 2px; }
 .login-box { display: grid; place-items: center; padding: 2rem 1.25rem; }
 .login-form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 1rem; }
 .login-form h2 { font-size: 1.7rem; }
-.demo { border-top: 1px solid var(--border); padding-top: 1rem; }
-.demo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-top: .5rem; }
-.demo-btn { display: flex; align-items: center; gap: .5rem; padding: .7rem; border: 1px solid var(--border); background: #fff; border-radius: 10px; cursor: pointer; font-weight: 600; }
-.demo-btn:hover { border-color: var(--green); background: var(--green-soft); }
-.demo-btn span { font-size: 1.2rem; }
 .senha-wrap { position: relative; }
 .senha-wrap input { padding-right: 5rem; }
 .senha-toggle { position: absolute; right: .75rem; top: 50%; transform: translateY(-50%); font-size: .85rem; }

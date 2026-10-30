@@ -285,6 +285,28 @@ public class GestorController {
         return Map.of("mensagem", "Professor cadastrado. Senha inicial: " + DataSeeder.SENHA_PADRAO);
     }
 
+    public record AcessoAlunoForm(String email) {}
+
+    /** Gera o login de acesso ao portal para um aluno matriculado (perfil ALUNO). */
+    @PostMapping("/alunos/{id}/acesso")
+    public Map<String, String> gerarAcessoAluno(@PathVariable Long id, @RequestBody AcessoAlunoForm f, HttpServletRequest req) {
+        Usuario g = gestor(req);
+        Aluno a = achar(alunos.findById(id), "Aluno");
+        if (a.getUsuario() != null)
+            throw new IllegalArgumentException("Este aluno já possui acesso (" + a.getUsuario().getEmail() + ")");
+        if (a.getStatus() != StatusMatricula.MATRICULADO)
+            throw new IllegalArgumentException("Somente alunos matriculados podem receber acesso ao portal");
+        if (blank(f.email())) throw new IllegalArgumentException("Informe o e-mail de acesso do aluno");
+        String email = f.email().trim().toLowerCase();
+        if (usuarios.findByEmailIgnoreCase(email).isPresent())
+            throw new IllegalArgumentException("E-mail já cadastrado");
+        Usuario u = new Usuario(a.getNome(), email, auth.hash(DataSeeder.SENHA_PADRAO), Perfil.ALUNO);
+        usuarios.save(u);
+        a.setUsuario(u);
+        auditoria.registrar(g, "NOVO_ACESSO_ALUNO", "Acesso criado para o aluno " + a.getNome() + " (" + email + ")");
+        return Map.of("mensagem", "Acesso do aluno criado. Senha inicial: " + DataSeeder.SENHA_PADRAO);
+    }
+
     // ---------- Financeiro (RF14-RF24) ----------
 
     @GetMapping("/precos")

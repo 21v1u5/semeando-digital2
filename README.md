@@ -16,16 +16,18 @@ Hoje a escola gerencia matrículas, contratos e cobranças em arquivos de Word a
 ## Stack
 | Camada | Tecnologias |
 |---|---|
-| Backend | Java 21, Spring Boot 3.3 (Web, Data JPA, Validation), H2 (banco em memória), Lombok, BCrypt |
+| Backend | Java 21, Spring Boot 3.3 (Web, Data JPA, Validation), PostgreSQL (persistente), Lombok, BCrypt |
 | Frontend | React 18, React Router 6, Vite 5, CSS puro (layout responsivo) |
+| Infra | Docker Compose (PostgreSQL + backend + frontend/Nginx) |
 | Build | Maven, npm |
 
 ## Como rodar localmente
 
 ### Pré-requisitos
-- [Java 17+](https://adoptium.net/) e [Maven 3.9+](https://maven.apache.org/)
-- [Node.js 18+](https://nodejs.org/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (inclui o Docker Compose) em execução
 - [Git](https://git-scm.com/)
+
+> Não é preciso ter Java, Maven, Node ou PostgreSQL instalados: tudo roda em contêineres.
 
 ### 1. Clonar o repositório
 ```bash
@@ -33,24 +35,23 @@ git clone https://github.com/RoberthFurtadoDev/semeando-digital.git
 cd semeando-digital
 ```
 
-### 2. Iniciar
+### 2. Configurar variáveis
+```bash
+cp .env.example .env   # no Windows: copy .env.example .env
+```
+Ajuste a senha do banco no `.env`.
+
+### 3. Iniciar
 **Atalho:** no Windows, dê dois cliques em `iniciar.bat`; no Linux/Mac, rode `./iniciar.sh`.
 
-**Ou manualmente, em dois terminais:**
+**Ou diretamente:**
 ```bash
-# Terminal 1 — API em http://localhost:8080
-cd backend
-mvn spring-boot:run
+docker compose up --build
 ```
-```bash
-# Terminal 2 — interface em http://localhost:5173
-cd frontend
-npm install
-npm run dev
-```
+Isso sobe três serviços: **PostgreSQL**, **backend** (http://localhost:8080) e **frontend** (http://localhost:5173).
 
-### 3. Acessar
-Abra **http://localhost:5173** e entre com um dos usuários abaixo (senha `123456`), ou use os botões de acesso rápido da tela de login.
+### 4. Acessar
+Abra **http://localhost:5173** e entre com um dos usuários abaixo (senha `123456`):
 
 | Perfil | E-mail |
 |---|---|
@@ -59,7 +60,23 @@ Abra **http://localhost:5173** e entre com um dos usuários abaixo (senha `12345
 | Aluno(a) | `aluno@exemplo.com` |
 | Responsável | `responsavel@exemplo.com` |
 
-> O banco H2 fica em memória: os dados de exemplo são recriados toda vez que o backend é iniciado.
+> Os dados ficam no volume `pgdata` do PostgreSQL e **persistem** entre reinicializações. A massa fictícia só é criada no primeiro start (quando o banco está vazio). Para zerar: `docker compose down -v`.
+
+### Perfis e cadastro de usuários
+O acesso é por **e-mail e senha** (senha inicial `123456`, com hash BCrypt). Não há autocadastro: **todos os usuários são criados pela gestão/secretaria**.
+
+| Perfil | Quem cadastra | Onde, na interface da gestão |
+|---|---|---|
+| **Professor** | Gestão | *Turmas e Professores* → "＋ Professor" |
+| **Responsável** | Gestão | *Matrículas* → "＋ Pré-matrícula" (o acesso do responsável é criado junto) |
+| **Aluno** | Gestão | *Matrículas* → ficha de um aluno matriculado → "Gerar acesso do aluno" |
+
+### Rodar sem Docker (opcional, só para desenvolvimento)
+Precisa de Java 21 + Node 18+. O backend pode usar um banco H2 em memória (sem persistência) com o profile `h2`:
+```bash
+cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=h2   # API em :8080
+cd frontend && npm install && npm run dev                          # interface em :5173
+```
 
 ## Estrutura
 ```

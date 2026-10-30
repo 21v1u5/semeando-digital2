@@ -31,8 +31,13 @@ public class AuthService {
 
     public String login(String email, String senha) {
         Usuario u = usuarios.findByEmailIgnoreCase(email == null ? "" : email.trim())
-                .filter(x -> senha != null && encoder.matches(senha, x.getSenha()))
+                .filter(x -> senha != null && x.getSenha() != null && encoder.matches(senha, x.getSenha()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos"));
+        return emitirToken(u);
+    }
+
+    /** Emite um token de sessão para um usuário já autenticado (ex.: login social). */
+    public String emitirToken(Usuario u) {
         String token = UUID.randomUUID().toString();
         tokens.put(token, u.getId());
         return token;

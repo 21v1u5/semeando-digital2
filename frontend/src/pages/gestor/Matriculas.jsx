@@ -22,6 +22,7 @@ export default function Matriculas() {
   const [nova, setNova] = useState(null)
   const [edit, setEdit] = useState(null)
   const [rejeitar, setRejeitar] = useState(null)
+  const [acessoEmail, setAcessoEmail] = useState('')
   const [msg, setMsg] = useState({})
 
   const carregar = () => api.get('/gestor/alunos').then(setAlunos)
@@ -38,14 +39,22 @@ export default function Matriculas() {
     try { const r = await fn(); setMsg({ ok: sucesso }); carregar(); return r } catch (e) { setMsg({ erro: e.message }) }
   }
 
-  const abrir = (a) => setEdit({
-    ...a, turmaId: a.turma?.id,
-    ...Object.fromEntries(['comprovanteTaxa', 'fardamento', 'hospitalReferencia', 'contatoEmergencia', 'autorizadosRetirada'].map((k) => [k, a[k] ?? ''])),
-  })
+  const abrir = (a) => {
+    setAcessoEmail('')
+    setEdit({
+      ...a, turmaId: a.turma?.id,
+      ...Object.fromEntries(['comprovanteTaxa', 'fardamento', 'hospitalReferencia', 'contatoEmergencia', 'autorizadosRetirada'].map((k) => [k, a[k] ?? ''])),
+    })
+  }
 
   const salvar = async () => {
     const r = await acao(() => api.put(`/gestor/alunos/${edit.id}`, edit), 'Dados salvos.')
     if (r) abrir(r)
+  }
+
+  const gerarAcesso = async () => {
+    const r = await acao(() => api.post(`/gestor/alunos/${edit.id}/acesso`, { email: acessoEmail }), 'Acesso do aluno criado (senha inicial 123456).')
+    if (r) { setEdit({ ...edit, loginEmail: acessoEmail.trim().toLowerCase() }); setAcessoEmail('') }
   }
 
   const contagem = (s) => (alunos || []).filter((a) => s.includes(a.status)).length
@@ -171,6 +180,22 @@ export default function Matriculas() {
             <Field label="Contato de emergência"><input value={edit.contatoEmergencia} onChange={(e) => setEdit({ ...edit, contatoEmergencia: e.target.value })} /></Field>
             <Field label="Pessoas autorizadas a retirar o aluno" full><input value={edit.autorizadosRetirada} onChange={(e) => setEdit({ ...edit, autorizadosRetirada: e.target.value })} /></Field>
           </div>
+          {edit.status === 'MATRICULADO' && (
+            <>
+              <h4 className="section-title">Acesso do aluno ao portal</h4>
+              {edit.loginEmail
+                ? <p className="muted small">✔ Acesso ativo: <strong>{edit.loginEmail}</strong> — senha inicial 123456.</p>
+                : (
+                  <>
+                    <div className="form-grid">
+                      <Field label="E-mail de login do aluno" full><input type="email" value={acessoEmail} onChange={(e) => setAcessoEmail(e.target.value)} placeholder="aluno@email.com" /></Field>
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={gerarAcesso}>Gerar acesso do aluno</button>
+                    <p className="muted small">Cria um login (perfil aluno) com a senha inicial 123456.</p>
+                  </>
+                )}
+            </>
+          )}
         </Modal>
       )}
     </>

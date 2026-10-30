@@ -2,13 +2,6 @@ import { useState } from 'react'
 import { useAuth } from '../App.jsx'
 import { Alert } from '../components/ui.jsx'
 
-const DEMO = [
-  { perfil: 'Gestão', email: 'gestor@exemplo.com', icon: '🏢' },
-  { perfil: 'Professor', email: 'professor@exemplo.com', icon: '👩‍🏫' },
-  { perfil: 'Aluno', email: 'aluno@exemplo.com', icon: '🎒' },
-  { perfil: 'Responsável', email: 'responsavel@exemplo.com', icon: '👪' },
-]
-
 export default function Login() {
   const { entrar } = useAuth()
   const [email, setEmail] = useState('')
@@ -17,11 +10,11 @@ export default function Login() {
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  const enviar = async (e, em = email, se = senha) => {
+  const enviar = async (e) => {
     e?.preventDefault()
     setErro('')
     setEnviando(true)
-    try { await entrar(em.trim(), se) } catch (err) { setErro(`${err.message}. A senha de demonstração é 123456 (6 dígitos); você digitou ${se.length} caractere(s).`) } finally { setEnviando(false) }
+    try { await entrar(email.trim(), senha) } catch (err) { setErro(err.message) } finally { setEnviando(false) }
   }
 
   return (
@@ -42,33 +35,21 @@ export default function Login() {
       <div className="login-box">
         <form className="login-form" onSubmit={enviar}>
           <h2>Entrar</h2>
-          <p className="muted">Acesse com seu e-mail e senha.</p>
+          <p className="muted">Acesse com o e-mail e a senha fornecidos pela secretaria.</p>
           <Alert tone="error">{erro}</Alert>
           <label className="field">
             <span>E-mail</span>
-            <input id="email" type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required autoFocus />
+            <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required autoFocus />
           </label>
           <label className="field">
             <span>Senha</span>
             <div className="senha-wrap">
               <input id="senha" type={verSenha ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)}
-                placeholder="••••••" autoComplete="off" required />
+                placeholder="••••••" autoComplete="current-password" required />
               <button type="button" className="btn-link senha-toggle" onClick={() => setVerSenha(!verSenha)}>{verSenha ? 'Ocultar' : 'Mostrar'}</button>
             </div>
           </label>
           <button className="btn btn-primary btn-block" disabled={enviando}>{enviando ? 'Entrando...' : 'Entrar'}</button>
-
-          <div className="demo">
-            <p className="muted small">Acesso rápido para demonstração (senha <strong>123456</strong>):</p>
-            <div className="demo-grid">
-              {DEMO.map((d) => (
-                <button type="button" key={d.email} className="demo-btn" disabled={enviando}
-                  onClick={() => { setEmail(d.email); setSenha('123456'); enviar(null, d.email, '123456') }}>
-                  <span>{d.icon}</span>{d.perfil}
-                </button>
-              ))}
-            </div>
-          </div>
           <p className="muted small lgpd">🔒 Ambiente de demonstração com dados 100% fictícios (LGPD, art. 14).</p>
         </form>
       </div>

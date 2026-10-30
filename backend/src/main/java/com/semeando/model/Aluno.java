@@ -75,6 +75,11 @@ public class Aluno {
         return responsaveis.isEmpty() ? null : responsaveis.get(0).getEmail();
     }
 
+    /** E-mail de login do aluno no portal, ou null se ainda não tem acesso. */
+    public String getLoginEmail() {
+        return usuario == null ? null : usuario.getEmail();
+    }
+
     public String getResponsavelTelefone() {
         return responsaveis.isEmpty() ? null : responsaveis.get(0).getTelefone();
     }

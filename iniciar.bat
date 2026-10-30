@@ -1,5 +1,6 @@
 @echo off
-REM Abre backend e frontend em duas janelas
-start "Semeando - Backend" cmd /k "cd backend && mvn spring-boot:run"
-start "Semeando - Frontend" cmd /k "cd frontend && (if not exist node_modules npm install) && npm run dev"
-echo Aguarde ~30s e acesse http://localhost:5173
+REM Sobe PostgreSQL + backend + frontend via Docker Compose.
+REM Pre-requisito: Docker Desktop instalado e em execucao.
+if not exist .env copy .env.example .env
+docker compose up --build
+echo Acesse http://localhost:5173
