@@ -5,8 +5,8 @@
 # Subir:                    docker compose up -d
 services:
   traefik:
-    image: traefik:v3.1
-    # Fixa a versao da API do Docker (daemons recentes recusam a padrao antiga 1.24).
+    image: traefik:v3.7
+    # Fixa a versao da API do Docker (daemons/Podman recentes recusam a padrao antiga 1.24).
     environment:
       - DOCKER_API_VERSION=1.41
     ports:
