@@ -6,6 +6,9 @@
 services:
   traefik:
     image: traefik:v3.1
+    # Fixa a versao da API do Docker (daemons recentes recusam a padrao antiga 1.24).
+    environment:
+      - DOCKER_API_VERSION=1.41
     ports:
       - "80:80"
       - "443:443"
