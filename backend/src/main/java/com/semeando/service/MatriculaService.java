@@ -3,6 +3,7 @@ package com.semeando.service;
 import com.semeando.model.*;
 import com.semeando.repo.AlunoRepository;
 import com.semeando.repo.ContratoRepository;
+import com.semeando.repo.TurmaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -13,11 +14,13 @@ import java.time.LocalDate;
 public class MatriculaService {
     private final AlunoRepository alunos;
     private final ContratoRepository contratos;
+    private final TurmaRepository turmas;
     private final CobrancaService cobranca;
 
-    public MatriculaService(AlunoRepository alunos, ContratoRepository contratos, CobrancaService cobranca) {
+    public MatriculaService(AlunoRepository alunos, ContratoRepository contratos, TurmaRepository turmas, CobrancaService cobranca) {
         this.alunos = alunos;
         this.contratos = contratos;
+        this.turmas = turmas;
         this.cobranca = cobranca;
     }
 
@@ -34,6 +37,9 @@ public class MatriculaService {
                     "Matrícula com pendências: " + String.join(", ", a.getPendencias()));
         if (a.getTurma() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Selecione uma turma");
+        // RN02: trava a turma para serializar efetivações concorrentes antes de
+        // conferir as vagas, evitando ultrapassar o limite por condição de corrida.
+        turmas.lockById(a.getTurma().getId());
         if (vagas(a.getTurma()) <= 0)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
                     "Turma " + a.getTurma().getNome() + " atingiu o limite de " + Turma.CAPACIDADE_MAXIMA + " alunos");
