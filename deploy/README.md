@@ -49,10 +49,13 @@ Não quer o painel exposto? Apague o bloco de `labels` do `traefik` no compose.
 ```bash
 cd ~/semeando-digital2          # raiz do projeto
 cp .env.example .env
-# defina uma senha forte do banco:
-nano .env                       # DB_PASSWORD=...
+# defina uma senha forte do banco e o segredo do JWT:
+nano .env                       # DB_PASSWORD=...  e  JWT_SECRET=...
+#   gere o JWT_SECRET com:  openssl rand -base64 48
 docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+> O `docker compose` se recusa a subir se `DB_PASSWORD` ou `JWT_SECRET` não estiverem definidos no `.env` — é proposital.
 
 Pronto: **https://semeando-digital.21v1u5.com** (gestor `gestor@exemplo.com` / `123456` — **troque as senhas de demonstração**).
 

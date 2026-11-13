@@ -3,26 +3,39 @@ package com.semeando.service;
 import com.semeando.model.Perfil;
 import com.semeando.model.Usuario;
 import com.semeando.repo.UsuarioRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Date;
 
-/** Autenticação simples por token em memória (ambiente local de demonstração). */
+/** Autenticação stateless por JWT assinado (HS256). O token carrega o id e o perfil
+ *  do usuário e expira sozinho — não há estado de sessão no servidor. */
 @Service
 public class AuthService {
     private final UsuarioRepository usuarios;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    private final Map<String, Long> tokens = new ConcurrentHashMap<>();
+    private final SecretKey chave;
+    private final long expiracaoMs;
 
-    public AuthService(UsuarioRepository usuarios) {
+    public AuthService(UsuarioRepository usuarios,
+                       @Value("${app.jwt.secret}") String secret,
+                       @Value("${app.jwt.expiration-hours:8}") long horas) {
         this.usuarios = usuarios;
+        this.chave = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expiracaoMs = horas * 3600_000L;
     }
 
     public String hash(String senha) {
@@ -36,20 +49,42 @@ public class AuthService {
         return emitirToken(u);
     }
 
-    /** Emite um token de sessão para um usuário já autenticado (ex.: login social). */
+    /** Emite um JWT para um usuário já autenticado (login por senha ou outro meio). */
     public String emitirToken(Usuario u) {
-        String token = UUID.randomUUID().toString();
-        tokens.put(token, u.getId());
-        return token;
+        Instant agora = Instant.now();
+        return Jwts.builder()
+                .subject(String.valueOf(u.getId()))
+                .claim("perfil", u.getPerfil().name())
+                .issuedAt(Date.from(agora))
+                .expiration(Date.from(agora.plusMillis(expiracaoMs)))
+                .signWith(chave)
+                .compact();
     }
 
+    /** Stateless: o logout é feito no cliente descartando o token; ele expira sozinho. */
     public void logout(HttpServletRequest req) {
-        String t = token(req);
-        if (t != null) tokens.remove(t);
+        // sem estado de sessão no servidor
     }
 
-    /** Troca a senha do usuário autenticado (qualquer perfil). */
-    @org.springframework.transaction.annotation.Transactional
+    public Usuario usuario(HttpServletRequest req) {
+        Long id = idDoToken(token(req));
+        return usuarios.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado"));
+    }
+
+    public Usuario usuarioPorToken(String token) {
+        return usuarios.findById(idDoToken(token)).orElseThrow();
+    }
+
+    /** RF36 / RNF01 - controle de acesso por perfil. */
+    public Usuario exigir(HttpServletRequest req, Perfil... perfis) {
+        Usuario u = usuario(req);
+        if (Arrays.stream(perfis).noneMatch(p -> p == u.getPerfil()))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso não permitido para o seu perfil");
+        return u;
+    }
+
+    @Transactional
     public void trocarSenha(HttpServletRequest req, String senhaAtual, String novaSenha) {
         Usuario u = usuario(req);
         if (senhaAtual == null || u.getSenha() == null || !encoder.matches(senhaAtual, u.getSenha()))
@@ -60,24 +95,15 @@ public class AuthService {
         usuarios.save(u);
     }
 
-    public Usuario usuario(HttpServletRequest req) {
-        String t = token(req);
-        Long id = t == null ? null : tokens.get(t);
-        if (id == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sessão expirada, faça login novamente");
-        return usuarios.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado"));
-    }
-
-    public Usuario usuarioPorToken(String token) {
-        return usuarios.findById(tokens.get(token)).orElseThrow();
-    }
-
-    /** RF36 / RNF01 - controle de acesso por perfil. */
-    public Usuario exigir(HttpServletRequest req, Perfil... perfis) {
-        Usuario u = usuario(req);
-        if (Arrays.stream(perfis).noneMatch(p -> p == u.getPerfil()))
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso não permitido para o seu perfil");
-        return u;
+    private Long idDoToken(String token) {
+        if (token == null)
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sessão expirada, faça login novamente");
+        try {
+            Claims c = Jwts.parser().verifyWith(chave).build().parseSignedClaims(token).getPayload();
+            return Long.valueOf(c.getSubject());
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sessão expirada, faça login novamente");
+        }
     }
 
     private String token(HttpServletRequest req) {

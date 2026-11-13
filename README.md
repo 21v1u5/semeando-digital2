@@ -16,7 +16,7 @@ Hoje a escola gerencia matrículas, contratos e cobranças em arquivos de Word a
 ## Stack
 | Camada | Tecnologias |
 |---|---|
-| Backend | Java 21, Spring Boot 3.3 (Web, Data JPA, Validation), PostgreSQL (persistente), Lombok, BCrypt |
+| Backend | Java 21, Spring Boot 3.3 (Web, Data JPA, Validation), PostgreSQL (persistente), JWT (jjwt), Lombok, BCrypt |
 | Frontend | React 18, React Router 6, Vite 5, CSS puro (layout responsivo) |
 | Infra | Docker Compose (PostgreSQL + backend + frontend/Nginx) |
 | Build | Maven, npm |

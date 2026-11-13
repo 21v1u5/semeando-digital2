@@ -30,6 +30,7 @@ services:
       DB_USER: ${DB_USER:-semeando}
       DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
       APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-https://semeando-digital.21v1u5.com}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env (mín. 32 caracteres)}
     networks:
       - interna
     depends_on:
