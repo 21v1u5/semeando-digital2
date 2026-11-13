@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../api.js'
-import { Alert, Badge, Card, Empty, Field, Loading, Modal, Tabs } from '../../components/ui.jsx'
+import { Alert, Badge, Card, confirmar, Empty, Field, Loading, Modal, Tabs } from '../../components/ui.jsx'
 import { data } from '../../util.js'
 
 const STATUS = {
@@ -55,6 +55,11 @@ export default function Matriculas() {
   const gerarAcesso = async () => {
     const r = await acao(() => api.post(`/gestor/alunos/${edit.id}/acesso`, { email: acessoEmail }), 'Acesso do aluno criado (senha inicial 123456).')
     if (r) { setEdit({ ...edit, loginEmail: acessoEmail.trim().toLowerCase() }); setAcessoEmail('') }
+  }
+
+  const anonimizar = async () => {
+    if (!(await confirmar(`Anonimizar os dados pessoais de ${edit.nome}? Ação irreversível (direito ao esquecimento, LGPD). O histórico financeiro é mantido de forma de-identificada.`))) return
+    if (await acao(() => api.post(`/gestor/alunos/${edit.id}/anonimizar`), 'Aluno anonimizado (LGPD).')) setEdit(null)
   }
 
   const contagem = (s) => (alunos || []).filter((a) => s.includes(a.status)).length
@@ -196,6 +201,15 @@ export default function Matriculas() {
                 )}
             </>
           )}
+          <h4 className="section-title">Privacidade (LGPD)</h4>
+          {edit.anonimizado
+            ? <Alert tone="warning">Cadastro anonimizado — os dados pessoais foram removidos (direito ao esquecimento, art. 16/18). O histórico é mantido de forma de-identificada.</Alert>
+            : (
+              <>
+                <button type="button" className="btn btn-sm btn-ghost txt-red" onClick={anonimizar}>Anonimizar dados do aluno</button>
+                <p className="muted small">Remove os dados pessoais (nome, nascimento, emergência, responsáveis) de forma irreversível, preservando o histórico de forma de-identificada.</p>
+              </>
+            )}
         </Modal>
       )}
     </>

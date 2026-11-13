@@ -41,6 +41,8 @@ public class Aluno {
     private String autorizadosRetirada;
     // RN07 / LGPD art. 14
     private boolean consentimentoLgpd;
+    /** LGPD art. 16/18: dados pessoais removidos (direito ao esquecimento). */
+    private boolean anonimizado;
 
     @JsonIgnore
     @OneToOne

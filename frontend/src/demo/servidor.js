@@ -435,6 +435,19 @@ rota('POST', '/gestor/usuarios/:id/resetar-senha', G, ({ u, p }) => {
   auditar(u, 'RESET_SENHA', 'Senha redefinida para ' + alvo.nome)
   return { mensagem: `Senha de ${alvo.nome} redefinida para ${SENHA}` }
 })
+rota('POST', '/gestor/alunos/:id/anonimizar', G, ({ u, p }) => {
+  const a = porId('alunos', p.id, 'Aluno')
+  if (a.anonimizado) throw new Erro(400, 'Este aluno já está anonimizado')
+  const rotulo = 'Aluno anonimizado #' + a.id
+  if (a.usuarioId) {
+    const alvo = usuario(a.usuarioId)
+    if (alvo) { alvo.nome = rotulo; alvo.email = `anon-${a.id}@removido.local`; alvo.senha = String(Math.random()); alvo.telefone = null }
+  }
+  Object.assign(a, { nome: rotulo, dataNascimento: null, hospitalReferencia: null, contatoEmergencia: null,
+    autorizadosRetirada: null, comprovanteTaxa: null, fardamento: null, responsaveis: [], anonimizado: true })
+  auditar(u, 'ANONIMIZACAO_LGPD', `Dados pessoais do aluno #${a.id} anonimizados (LGPD art. 16/18)`)
+  return { mensagem: 'Aluno anonimizado. Dados pessoais removidos; histórico mantido de forma de-identificada.' }
+})
 rota('GET', '/gestor/precos', G, () => db.precos.map((x) => ({ ...x })))
 rota('PUT', '/gestor/precos/:id', G, ({ u, p, body }) => {
   const v = Number(body?.valor)

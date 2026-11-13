@@ -12,6 +12,9 @@ Hoje a escola gerencia matrículas, contratos e cobranças em arquivos de Word a
 - **Pedagógico:** diário de classe (chamada, notas e conteúdo), planos de aula e boletim.
 - **Portal da família:** boletim, frequência, avisos, calendário, materiais e dados de emergência.
 - **Conformidade:** log de auditoria, prazos de SMTT/Censo/Sistema Presença, exportação CSV e backup.
+- **Privacidade (LGPD):** registro de consentimento, trilha de auditoria e **anonimização de aluno** (direito ao esquecimento, art. 16/18) preservando o histórico de forma de-identificada.
+
+> **Sobre a LGPD:** o sistema implementa consentimento, auditoria e anonimização, e usa dados fictícios em desenvolvimento (art. 14). Ele **não** pretende ser uma solução de conformidade completa — itens como criptografia de PII em repouso, portabilidade e política formal de retenção ficam fora do escopo deste projeto acadêmico.
 
 ## Stack
 | Camada | Tecnologias |

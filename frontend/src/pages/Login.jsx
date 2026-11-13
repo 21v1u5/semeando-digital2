@@ -28,7 +28,7 @@ export default function Login() {
             <li>✔ Cobrança dual: taxa de associado e mensalidade</li>
             <li>✔ Validação automática contra a tabela oficial</li>
             <li>✔ Checklist de documentos e dados de emergência</li>
-            <li>✔ Auditoria e conformidade com a LGPD</li>
+            <li>✔ Consentimento, auditoria e anonimização (LGPD)</li>
           </ul>
         </div>
       </div>

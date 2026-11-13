@@ -371,6 +371,36 @@ public class GestorController {
         return Map.of("mensagem", "Senha de " + u.getNome() + " redefinida para " + DataSeeder.SENHA_PADRAO);
     }
 
+    /**
+     * LGPD (art. 16/18): remove os dados pessoais do aluno, mantendo o histórico
+     * financeiro/acadêmico de forma de-identificada. Ação irreversível.
+     */
+    @PostMapping("/alunos/{id}/anonimizar")
+    public Map<String, String> anonimizar(@PathVariable Long id, HttpServletRequest req) {
+        Usuario g = gestor(req);
+        Aluno a = achar(alunos.findById(id), "Aluno");
+        if (a.isAnonimizado()) throw new IllegalArgumentException("Este aluno já está anonimizado");
+        String rotulo = "Aluno anonimizado #" + a.getId();
+        if (a.getUsuario() != null) { // desativa o acesso ao portal, se existir
+            Usuario u = a.getUsuario();
+            u.setNome(rotulo);
+            u.setEmail("anon-" + a.getId() + "@removido.local");
+            u.setSenha(auth.hash(java.util.UUID.randomUUID().toString()));
+            u.setTelefone(null);
+        }
+        a.setNome(rotulo);
+        a.setDataNascimento(null);
+        a.setHospitalReferencia(null);
+        a.setContatoEmergencia(null);
+        a.setAutorizadosRetirada(null);
+        a.setComprovanteTaxa(null);
+        a.setFardamento(null);
+        a.getResponsaveis().clear(); // desvincula responsáveis (PII de terceiros)
+        a.setAnonimizado(true);
+        auditoria.registrar(g, "ANONIMIZACAO_LGPD", "Dados pessoais do aluno #" + a.getId() + " anonimizados (LGPD art. 16/18)");
+        return Map.of("mensagem", "Aluno anonimizado. Dados pessoais removidos; histórico mantido de forma de-identificada.");
+    }
+
     // ---------- Financeiro (RF14-RF24) ----------
 
     @GetMapping("/precos")
