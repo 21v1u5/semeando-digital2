@@ -8,8 +8,22 @@ on:
 
 jobs:
   backend-tests:
-    name: Testes do backend (JUnit)
+    name: Testes do backend (JUnit + integração)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: semeando
+          POSTGRES_USER: semeando
+          POSTGRES_PASSWORD: semeando
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U semeando"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - name: Configurar JDK 21
@@ -18,7 +32,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Rodar testes
+      - name: Rodar testes (unitários + integração com Postgres)
         working-directory: backend
         run: mvn -B test
 
