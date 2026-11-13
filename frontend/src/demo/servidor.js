@@ -409,6 +409,32 @@ rota('POST', '/gestor/professores', G, ({ u, body: f }) => {
   db.usuarios.push(n); auditar(u, 'NOVO_PROFESSOR', 'Professor(a) cadastrado(a): ' + n.nome)
   return { mensagem: 'Professor cadastrado. Senha inicial: ' + SENHA }
 })
+rota('GET', '/gestor/usuarios', G, () => [...db.usuarios].sort(porNome).map((x) => ({
+  id: x.id, nome: x.nome, email: x.email, perfil: x.perfil, telefone: x.telefone, disciplinas: x.disciplinas })))
+rota('POST', '/gestor/usuarios', G, ({ u, body: f }) => {
+  if (blank(f.nome) || blank(f.email) || !f.perfil) throw new Erro(400, 'Informe nome, e-mail e perfil')
+  if (f.perfil === 'ALUNO') throw new Erro(400, 'O acesso de aluno é gerado em Matrículas, a partir de um aluno matriculado')
+  if (db.usuarios.some((x) => x.email.toLowerCase() === f.email.trim().toLowerCase())) throw new Erro(400, 'E-mail já cadastrado')
+  const n = { id: id(), nome: f.nome.trim(), email: f.email.trim().toLowerCase(), senha: SENHA, perfil: f.perfil, telefone: f.telefone, disciplinas: f.perfil === 'PROFESSOR' ? f.disciplinas : null }
+  db.usuarios.push(n); auditar(u, 'NOVO_USUARIO', `Usuário cadastrado: ${n.nome} (${n.perfil})`)
+  return { mensagem: 'Usuário criado. Senha inicial: ' + SENHA }
+})
+rota('PUT', '/gestor/usuarios/:id', G, ({ u, p, body: f }) => {
+  const alvo = porId('usuarios', p.id, 'Usuário')
+  if (blank(f.nome) || blank(f.email)) throw new Erro(400, 'Informe nome e e-mail')
+  const email = f.email.trim().toLowerCase()
+  if (db.usuarios.some((x) => x.id !== alvo.id && x.email.toLowerCase() === email)) throw new Erro(400, 'E-mail já usado por outro usuário')
+  alvo.nome = f.nome.trim(); alvo.email = email; alvo.telefone = f.telefone
+  if (alvo.perfil === 'PROFESSOR') alvo.disciplinas = f.disciplinas
+  auditar(u, 'ALTERACAO_USUARIO', 'Usuário atualizado: ' + alvo.nome)
+  return { mensagem: 'Usuário atualizado' }
+})
+rota('POST', '/gestor/usuarios/:id/resetar-senha', G, ({ u, p }) => {
+  const alvo = porId('usuarios', p.id, 'Usuário')
+  alvo.senha = SENHA
+  auditar(u, 'RESET_SENHA', 'Senha redefinida para ' + alvo.nome)
+  return { mensagem: `Senha de ${alvo.nome} redefinida para ${SENHA}` }
+})
 rota('GET', '/gestor/precos', G, () => db.precos.map((x) => ({ ...x })))
 rota('PUT', '/gestor/precos/:id', G, ({ u, p, body }) => {
   const v = Number(body?.valor)

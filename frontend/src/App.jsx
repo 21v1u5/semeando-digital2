@@ -11,6 +11,7 @@ import GestorPainel from './pages/gestor/Painel.jsx'
 import Matriculas from './pages/gestor/Matriculas.jsx'
 import Turmas from './pages/gestor/Turmas.jsx'
 import Financeiro from './pages/gestor/Financeiro.jsx'
+import Usuarios from './pages/gestor/Usuarios.jsx'
 import Instituicao from './pages/gestor/Instituicao.jsx'
 import Conformidade from './pages/gestor/Conformidade.jsx'
 import ProfessorPainel from './pages/professor/Painel.jsx'
@@ -28,6 +29,7 @@ export const MENUS = {
     { to: '/gestor', label: 'Painel', icon: '📊', el: <GestorPainel /> },
     { to: '/gestor/matriculas', label: 'Matrículas', icon: '📝', el: <Matriculas /> },
     { to: '/gestor/turmas', label: 'Turmas e Professores', icon: '🏫', el: <Turmas /> },
+    { to: '/gestor/usuarios', label: 'Usuários', icon: '👥', el: <Usuarios /> },
     { to: '/gestor/financeiro', label: 'Financeiro', icon: '💰', el: <Financeiro /> },
     { to: '/gestor/avisos', label: 'Avisos', icon: '📢', el: <Avisos /> },
     { to: '/gestor/calendario', label: 'Calendário', icon: '📅', el: <Calendario /> },

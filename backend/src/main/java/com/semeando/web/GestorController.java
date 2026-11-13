@@ -307,6 +307,70 @@ public class GestorController {
         return Map.of("mensagem", "Acesso do aluno criado. Senha inicial: " + DataSeeder.SENHA_PADRAO);
     }
 
+    // ---------- Gestão de usuários (RF30 / RNF01) ----------
+
+    @GetMapping("/usuarios")
+    public List<Map<String, Object>> usuarios(HttpServletRequest req) {
+        gestor(req);
+        return usuarios.findAll(org.springframework.data.domain.Sort.by("nome")).stream().map(u -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", u.getId());
+            m.put("nome", u.getNome());
+            m.put("email", u.getEmail());
+            m.put("perfil", u.getPerfil());
+            m.put("telefone", u.getTelefone());
+            m.put("disciplinas", u.getDisciplinas());
+            return m;
+        }).toList();
+    }
+
+    public record UsuarioForm(String nome, String email, Perfil perfil, String telefone, String disciplinas) {}
+
+    @PostMapping("/usuarios")
+    public Map<String, String> novoUsuario(@RequestBody UsuarioForm f, HttpServletRequest req) {
+        Usuario g = gestor(req);
+        if (blank(f.nome()) || blank(f.email()) || f.perfil() == null)
+            throw new IllegalArgumentException("Informe nome, e-mail e perfil");
+        if (f.perfil() == Perfil.ALUNO)
+            throw new IllegalArgumentException("O acesso de aluno é gerado em Matrículas, a partir de um aluno matriculado");
+        if (usuarios.findByEmailIgnoreCase(f.email().trim()).isPresent())
+            throw new IllegalArgumentException("E-mail já cadastrado");
+        Usuario u = new Usuario(f.nome().trim(), f.email().trim().toLowerCase(), auth.hash(DataSeeder.SENHA_PADRAO), f.perfil());
+        u.setTelefone(f.telefone());
+        if (f.perfil() == Perfil.PROFESSOR) u.setDisciplinas(f.disciplinas());
+        usuarios.save(u);
+        auditoria.registrar(g, "NOVO_USUARIO", "Usuário cadastrado: " + u.getNome() + " (" + u.getPerfil() + ")");
+        return Map.of("mensagem", "Usuário criado. Senha inicial: " + DataSeeder.SENHA_PADRAO);
+    }
+
+    public record UsuarioEditForm(String nome, String email, String telefone, String disciplinas) {}
+
+    @PutMapping("/usuarios/{id}")
+    public Map<String, String> editarUsuario(@PathVariable Long id, @RequestBody UsuarioEditForm f, HttpServletRequest req) {
+        Usuario g = gestor(req);
+        Usuario u = achar(usuarios.findById(id), "Usuário");
+        if (blank(f.nome()) || blank(f.email())) throw new IllegalArgumentException("Informe nome e e-mail");
+        String email = f.email().trim().toLowerCase();
+        usuarios.findByEmailIgnoreCase(email).filter(x -> !x.getId().equals(id)).ifPresent(x -> {
+            throw new IllegalArgumentException("E-mail já usado por outro usuário");
+        });
+        u.setNome(f.nome().trim());
+        u.setEmail(email);
+        u.setTelefone(f.telefone());
+        if (u.getPerfil() == Perfil.PROFESSOR) u.setDisciplinas(f.disciplinas());
+        auditoria.registrar(g, "ALTERACAO_USUARIO", "Usuário atualizado: " + u.getNome());
+        return Map.of("mensagem", "Usuário atualizado");
+    }
+
+    @PostMapping("/usuarios/{id}/resetar-senha")
+    public Map<String, String> resetarSenha(@PathVariable Long id, HttpServletRequest req) {
+        Usuario g = gestor(req);
+        Usuario u = achar(usuarios.findById(id), "Usuário");
+        u.setSenha(auth.hash(DataSeeder.SENHA_PADRAO));
+        auditoria.registrar(g, "RESET_SENHA", "Senha redefinida para " + u.getNome());
+        return Map.of("mensagem", "Senha de " + u.getNome() + " redefinida para " + DataSeeder.SENHA_PADRAO);
+    }
+
     // ---------- Financeiro (RF14-RF24) ----------
 
     @GetMapping("/precos")
